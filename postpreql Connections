@@ -1,0 +1,581 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "04765057-2fdf-417e-a2f2-130613038bec",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import pandas as pd"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "c4b52d8e-c315-4c49-b02b-2c55e5476eb5",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "'2.1.4'"
+      ]
+     },
+     "execution_count": 3,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "pd.__version__"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "4e24214f-c460-456a-9865-12d1cf7a72ad",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df = pd.read_csv(\"green_tripdata_2019-09.csv\", nrows=100)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "id": "6598a75c-9849-4fa9-bc85-d955aae4eefb",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from  sqlalchemy import create_engine"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "id": "c33496c8-8bcd-47b6-918f-ba107881fd05",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "engine = create_engine('postgresql://tino:tino@localhost:5432/my_taxi')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "id": "63e7e0b6-2999-431a-a9c4-b65ed0c14fa0",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "<sqlalchemy.engine.base.Connection at 0x7f6cd85f6290>"
+      ]
+     },
+     "execution_count": 17,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "engine.connect()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "02d97d07-5ca9-43d3-bef3-81b3fdf34c6c",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df.lpep_pickup_datetime = pd.to_datetime(df.lpep_pickup_datetime)\n",
+    "df.lpep_dropoff_datetime = pd.to_datetime(df.lpep_dropoff_datetime)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "id": "9a26b6c0-97b2-4061-91bb-7997f35b0fcd",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\n",
+      "CREATE TABLE green_taxi_data (\n",
+      "\t\"VendorID\" BIGINT, \n",
+      "\tlpep_pickup_datetime TIMESTAMP WITHOUT TIME ZONE, \n",
+      "\tlpep_dropoff_datetime TIMESTAMP WITHOUT TIME ZONE, \n",
+      "\tstore_and_fwd_flag TEXT, \n",
+      "\t\"RatecodeID\" BIGINT, \n",
+      "\t\"PULocationID\" BIGINT, \n",
+      "\t\"DOLocationID\" BIGINT, \n",
+      "\tpassenger_count BIGINT, \n",
+      "\ttrip_distance FLOAT(53), \n",
+      "\tfare_amount FLOAT(53), \n",
+      "\textra FLOAT(53), \n",
+      "\tmta_tax FLOAT(53), \n",
+      "\ttip_amount FLOAT(53), \n",
+      "\ttolls_amount FLOAT(53), \n",
+      "\tehail_fee FLOAT(53), \n",
+      "\timprovement_surcharge FLOAT(53), \n",
+      "\ttotal_amount FLOAT(53), \n",
+      "\tpayment_type BIGINT, \n",
+      "\ttrip_type BIGINT, \n",
+      "\tcongestion_surcharge FLOAT(53)\n",
+      ")\n",
+      "\n",
+      "\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(pd.io.sql.get_schema(df,name=\"green_taxi_data\",con=engine))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "id": "73cd3324-2ab8-4c3a-8be2-a0661e8f0771",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df_iter = pd.read_csv(\"green_tripdata_2019-09.csv\", iterator=True,chunksize=100000)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "id": "be76a11e-f2b6-4912-9a32-ff79165551b4",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df = next(df_iter)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "id": "5e40c525-6f65-41c3-9eb4-d8904e18169a",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "100000"
+      ]
+     },
+     "execution_count": 22,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "len(df)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "id": "8e9c5395-76cb-45a5-a96b-987cbb9d5648",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df.lpep_pickup_datetime = pd.to_datetime(df.lpep_pickup_datetime)\n",
+    "df.lpep_dropoff_datetime = pd.to_datetime(df.lpep_dropoff_datetime)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 25,
+   "id": "67d6f24a-e042-40c9-9bd4-4c875fcad238",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0"
+      ]
+     },
+     "execution_count": 25,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df.head(n=0).to_sql(name='green_taxi_data', con=engine, if_exists='replace')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "id": "76a3fc32-cd05-4eff-8da4-4c07dbb8d434",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>VendorID</th>\n",
+       "      <th>lpep_pickup_datetime</th>\n",
+       "      <th>lpep_dropoff_datetime</th>\n",
+       "      <th>store_and_fwd_flag</th>\n",
+       "      <th>RatecodeID</th>\n",
+       "      <th>PULocationID</th>\n",
+       "      <th>DOLocationID</th>\n",
+       "      <th>passenger_count</th>\n",
+       "      <th>trip_distance</th>\n",
+       "      <th>fare_amount</th>\n",
+       "      <th>extra</th>\n",
+       "      <th>mta_tax</th>\n",
+       "      <th>tip_amount</th>\n",
+       "      <th>tolls_amount</th>\n",
+       "      <th>ehail_fee</th>\n",
+       "      <th>improvement_surcharge</th>\n",
+       "      <th>total_amount</th>\n",
+       "      <th>payment_type</th>\n",
+       "      <th>trip_type</th>\n",
+       "      <th>congestion_surcharge</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "Empty DataFrame\n",
+       "Columns: [VendorID, lpep_pickup_datetime, lpep_dropoff_datetime, store_and_fwd_flag, RatecodeID, PULocationID, DOLocationID, passenger_count, trip_distance, fare_amount, extra, mta_tax, tip_amount, tolls_amount, ehail_fee, improvement_surcharge, total_amount, payment_type, trip_type, congestion_surcharge]\n",
+       "Index: []"
+      ]
+     },
+     "execution_count": 24,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df.head(n=0)#this returns the first row which in this is the column name"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 27,
+   "id": "e8d01625-22c3-49af-a944-dd1a1f44eac0",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "CPU times: user 7.1 s, sys: 75.2 ms, total: 7.18 s\n",
+      "Wall time: 10.6 s\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "1000"
+      ]
+     },
+     "execution_count": 27,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "%time df.to_sql(name='green_taxi_data', con=engine, if_exists='append')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 47,
+   "id": "7b80fbce-4785-454a-8156-0a2dbd5496d7",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "1706726422.9484022\n"
+     ]
+    }
+   ],
+   "source": [
+    "from time import time\n",
+    "t_start = time()\n",
+    "print(t_start)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 48,
+   "id": "980031a8-acc6-4ff1-a873-f8914ad30189",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "/tmp/ipykernel_25412/3548098781.py:3: DtypeWarning: Columns (3) have mixed types. Specify dtype option on import or set low_memory=False.\n",
+      "  df = next(df_iter)\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "inserted another junk ...., took 10.584 second\n",
+      "inserted another junk ...., took 4.326 second\n"
+     ]
+    },
+    {
+     "ename": "StopIteration",
+     "evalue": "",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+      "\u001b[0;31mStopIteration\u001b[0m                             Traceback (most recent call last)",
+      "Cell \u001b[0;32mIn[48], line 3\u001b[0m\n\u001b[1;32m      1\u001b[0m \u001b[38;5;28;01mwhile\u001b[39;00m \u001b[38;5;28;01mTrue\u001b[39;00m:\n\u001b[1;32m      2\u001b[0m     t_start \u001b[38;5;241m=\u001b[39m time()\n\u001b[0;32m----> 3\u001b[0m     df \u001b[38;5;241m=\u001b[39m \u001b[38;5;28;43mnext\u001b[39;49m\u001b[43m(\u001b[49m\u001b[43mdf_iter\u001b[49m\u001b[43m)\u001b[49m\n\u001b[1;32m      4\u001b[0m     df\u001b[38;5;241m.\u001b[39mlpep_pickup_datetime \u001b[38;5;241m=\u001b[39m pd\u001b[38;5;241m.\u001b[39mto_datetime(df\u001b[38;5;241m.\u001b[39mlpep_pickup_datetime)\n\u001b[1;32m      5\u001b[0m     df\u001b[38;5;241m.\u001b[39mlpep_dropoff_datetime \u001b[38;5;241m=\u001b[39m pd\u001b[38;5;241m.\u001b[39mto_datetime(df\u001b[38;5;241m.\u001b[39mlpep_dropoff_datetime)\n",
+      "File \u001b[0;32m~/.local/lib/python3.10/site-packages/pandas/io/parsers/readers.py:1668\u001b[0m, in \u001b[0;36mTextFileReader.__next__\u001b[0;34m(self)\u001b[0m\n\u001b[1;32m   1666\u001b[0m \u001b[38;5;28;01mdef\u001b[39;00m \u001b[38;5;21m__next__\u001b[39m(\u001b[38;5;28mself\u001b[39m) \u001b[38;5;241m-\u001b[39m\u001b[38;5;241m>\u001b[39m DataFrame:\n\u001b[1;32m   1667\u001b[0m     \u001b[38;5;28;01mtry\u001b[39;00m:\n\u001b[0;32m-> 1668\u001b[0m         \u001b[38;5;28;01mreturn\u001b[39;00m \u001b[38;5;28;43mself\u001b[39;49m\u001b[38;5;241;43m.\u001b[39;49m\u001b[43mget_chunk\u001b[49m\u001b[43m(\u001b[49m\u001b[43m)\u001b[49m\n\u001b[1;32m   1669\u001b[0m     \u001b[38;5;28;01mexcept\u001b[39;00m \u001b[38;5;167;01mStopIteration\u001b[39;00m:\n\u001b[1;32m   1670\u001b[0m         \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mclose()\n",
+      "File \u001b[0;32m~/.local/lib/python3.10/site-packages/pandas/io/parsers/readers.py:1777\u001b[0m, in \u001b[0;36mTextFileReader.get_chunk\u001b[0;34m(self, size)\u001b[0m\n\u001b[1;32m   1775\u001b[0m         \u001b[38;5;28;01mraise\u001b[39;00m \u001b[38;5;167;01mStopIteration\u001b[39;00m\n\u001b[1;32m   1776\u001b[0m     size \u001b[38;5;241m=\u001b[39m \u001b[38;5;28mmin\u001b[39m(size, \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mnrows \u001b[38;5;241m-\u001b[39m \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39m_currow)\n\u001b[0;32m-> 1777\u001b[0m \u001b[38;5;28;01mreturn\u001b[39;00m \u001b[38;5;28;43mself\u001b[39;49m\u001b[38;5;241;43m.\u001b[39;49m\u001b[43mread\u001b[49m\u001b[43m(\u001b[49m\u001b[43mnrows\u001b[49m\u001b[38;5;241;43m=\u001b[39;49m\u001b[43msize\u001b[49m\u001b[43m)\u001b[49m\n",
+      "File \u001b[0;32m~/.local/lib/python3.10/site-packages/pandas/io/parsers/readers.py:1748\u001b[0m, in \u001b[0;36mTextFileReader.read\u001b[0;34m(self, nrows)\u001b[0m\n\u001b[1;32m   1741\u001b[0m nrows \u001b[38;5;241m=\u001b[39m validate_integer(\u001b[38;5;124m\"\u001b[39m\u001b[38;5;124mnrows\u001b[39m\u001b[38;5;124m\"\u001b[39m, nrows)\n\u001b[1;32m   1742\u001b[0m \u001b[38;5;28;01mtry\u001b[39;00m:\n\u001b[1;32m   1743\u001b[0m     \u001b[38;5;66;03m# error: \"ParserBase\" has no attribute \"read\"\u001b[39;00m\n\u001b[1;32m   1744\u001b[0m     (\n\u001b[1;32m   1745\u001b[0m         index,\n\u001b[1;32m   1746\u001b[0m         columns,\n\u001b[1;32m   1747\u001b[0m         col_dict,\n\u001b[0;32m-> 1748\u001b[0m     ) \u001b[38;5;241m=\u001b[39m \u001b[38;5;28;43mself\u001b[39;49m\u001b[38;5;241;43m.\u001b[39;49m\u001b[43m_engine\u001b[49m\u001b[38;5;241;43m.\u001b[39;49m\u001b[43mread\u001b[49m\u001b[43m(\u001b[49m\u001b[43m  \u001b[49m\u001b[38;5;66;43;03m# type: ignore[attr-defined]\u001b[39;49;00m\n\u001b[1;32m   1749\u001b[0m \u001b[43m        \u001b[49m\u001b[43mnrows\u001b[49m\n\u001b[1;32m   1750\u001b[0m \u001b[43m    \u001b[49m\u001b[43m)\u001b[49m\n\u001b[1;32m   1751\u001b[0m \u001b[38;5;28;01mexcept\u001b[39;00m \u001b[38;5;167;01mException\u001b[39;00m:\n\u001b[1;32m   1752\u001b[0m     \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mclose()\n",
+      "File \u001b[0;32m~/.local/lib/python3.10/site-packages/pandas/io/parsers/c_parser_wrapper.py:234\u001b[0m, in \u001b[0;36mCParserWrapper.read\u001b[0;34m(self, nrows)\u001b[0m\n\u001b[1;32m    232\u001b[0m \u001b[38;5;28;01mtry\u001b[39;00m:\n\u001b[1;32m    233\u001b[0m     \u001b[38;5;28;01mif\u001b[39;00m \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mlow_memory:\n\u001b[0;32m--> 234\u001b[0m         chunks \u001b[38;5;241m=\u001b[39m \u001b[38;5;28;43mself\u001b[39;49m\u001b[38;5;241;43m.\u001b[39;49m\u001b[43m_reader\u001b[49m\u001b[38;5;241;43m.\u001b[39;49m\u001b[43mread_low_memory\u001b[49m\u001b[43m(\u001b[49m\u001b[43mnrows\u001b[49m\u001b[43m)\u001b[49m\n\u001b[1;32m    235\u001b[0m         \u001b[38;5;66;03m# destructive to chunks\u001b[39;00m\n\u001b[1;32m    236\u001b[0m         data \u001b[38;5;241m=\u001b[39m _concatenate_chunks(chunks)\n",
+      "File \u001b[0;32mparsers.pyx:868\u001b[0m, in \u001b[0;36mpandas._libs.parsers.TextReader.read_low_memory\u001b[0;34m()\u001b[0m\n",
+      "\u001b[0;31mStopIteration\u001b[0m: "
+     ]
+    }
+   ],
+   "source": [
+    "while True:\n",
+    "    t_start = time()\n",
+    "    df = next(df_iter)\n",
+    "    df.lpep_pickup_datetime = pd.to_datetime(df.lpep_pickup_datetime)\n",
+    "    df.lpep_dropoff_datetime = pd.to_datetime(df.lpep_dropoff_datetime)\n",
+    "    df.to_sql(name='green_taxi_data', con=engine, if_exists='append')\n",
+    "    t_end =time()\n",
+    "    print('inserted another junk ...., took %.3f second' %(t_end - t_start))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 51,
+   "id": "a9255f55-10ac-4591-8896-35802f8a77dd",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "############# TO IMPORT THE SECOND TABLE ##############\n",
+    "\n",
+    "\n",
+    "df = pd.read_csv(\"taxi+_zone_lookup.csv\")\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 52,
+   "id": "a1f2d66d-b15a-4b8b-bef5-f043e49626d3",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>LocationID</th>\n",
+       "      <th>Borough</th>\n",
+       "      <th>Zone</th>\n",
+       "      <th>service_zone</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>1</td>\n",
+       "      <td>EWR</td>\n",
+       "      <td>Newark Airport</td>\n",
+       "      <td>EWR</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>2</td>\n",
+       "      <td>Queens</td>\n",
+       "      <td>Jamaica Bay</td>\n",
+       "      <td>Boro Zone</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>3</td>\n",
+       "      <td>Bronx</td>\n",
+       "      <td>Allerton/Pelham Gardens</td>\n",
+       "      <td>Boro Zone</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>4</td>\n",
+       "      <td>Manhattan</td>\n",
+       "      <td>Alphabet City</td>\n",
+       "      <td>Yellow Zone</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>5</td>\n",
+       "      <td>Staten Island</td>\n",
+       "      <td>Arden Heights</td>\n",
+       "      <td>Boro Zone</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   LocationID        Borough                     Zone service_zone\n",
+       "0           1            EWR           Newark Airport          EWR\n",
+       "1           2         Queens              Jamaica Bay    Boro Zone\n",
+       "2           3          Bronx  Allerton/Pelham Gardens    Boro Zone\n",
+       "3           4      Manhattan            Alphabet City  Yellow Zone\n",
+       "4           5  Staten Island            Arden Heights    Boro Zone"
+      ]
+     },
+     "execution_count": 52,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 54,
+   "id": "6c0d4ba7-eeca-46ab-805d-e8bfe12ee6a2",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\n",
+      "CREATE TABLE taxi_zone_lookup (\n",
+      "\t\"LocationID\" BIGINT, \n",
+      "\t\"Borough\" TEXT, \n",
+      "\t\"Zone\" TEXT, \n",
+      "\tservice_zone TEXT\n",
+      ")\n",
+      "\n",
+      "\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(pd.io.sql.get_schema(df,name=\"taxi_zone_lookup\",con=engine))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 55,
+   "id": "b53969af-a85e-4f33-a3b3-7fb252ecc6c2",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0"
+      ]
+     },
+     "execution_count": 55,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df.head(n=0).to_sql(name='taxi_zone_lookup', con=engine, if_exists='replace')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 56,
+   "id": "0b4c7784-edf0-4e22-9569-c2289c60bff9",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "CPU times: user 12.5 ms, sys: 165 µs, total: 12.7 ms\n",
+      "Wall time: 39.8 ms\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "265"
+      ]
+     },
+     "execution_count": 56,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "%time df.to_sql(name='taxi_zone_lookup', con=engine, if_exists='append')"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.10.13"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
